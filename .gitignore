@@ -1,5 +1,7 @@
 .venv
 .vscode
+.DS_Store
+.python-version
 .env
 **/*__pycache__
 websocket-client
@@ -12,3 +14,4 @@ tests/voting_tests/test_voting.py
 .pytest_cache
 *.pyc
 data
+typings

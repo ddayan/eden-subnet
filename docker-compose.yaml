@@ -5,21 +5,17 @@ services:
       - "8080:8080"
     volumes:
       - .:/code
-      - /home/ubuntu/.commune:/root/.commune
+      - $HOME/.commune:/root/.commune
     env_file:
       - .env
     environment:
       - CUDA_VISIBLE_DEVICES=3
     command: 
-      - python 
+      - poetry
+      - run
+      - python
       - -m 
-      - eden_subnet.validator.eden_Validator_1.py
-      - --key_name
-      - eden.Validator_1
-      - --host
-      - "50.99.63.14"
-      - --port
-      - "8080"
+      - eden_subnet.validator.cli
     deploy:
       resources:
         reservations:

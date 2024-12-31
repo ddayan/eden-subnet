@@ -7,17 +7,34 @@ PIP_NO_CACHE_DIR=off \
 PIP_DISABLE_PIP_VERSION_CHECK=on \
 PIP_DEFAULT_TIMEOUT=100 
 
-RUN apt-get update && \
-    apt-get install -y bash python3 python3-venv python3-pip python3-dev python-is-python3 build-essential git  && \
-    rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && \
+#     apt-get install -y bash python3 python3-venv python3-pip python3-dev python-is-python3 build-essential git  && \
+#     rm -rf /var/lib/apt/lists/*
 
-COPY .venv /code/.venv
-COPY . /code
-WORKDIR /code
 
-RUN pip install git+https://github.com/agicommies/communex
+SHELL ["/bin/bash", "-c"]
+WORKDIR /app
+COPY src /app/src
+COPY pyproject.toml /app
+COPY poetry.lock /app
+COPY README.md /app
+COPY .env /app
 
-RUN pip install -r requirements.txt
+RUN curl -sSL https://install.python-poetry.org | python3 - -y
+ENV PATH="~/.local/share/pypoetry/venv/bin:${PATH}"
+RUN poetry install
+
+CMD ["/bin/bash"]
+# COPY .venv /code/.venv
+# COPY . /code
+# WORKDIR /code
+
+
+
+
+# RUN pip install git+https://github.com/agicommies/communex
+
+# RUN pip install -r requirements.txt
 
 
 

@@ -2,6 +2,7 @@ import random
 import json
 import time
 import os
+import sys
 
 import requests.sessions
 import requests
@@ -48,7 +49,9 @@ tokenizer = TikTokenizer()
 comx = CommuneClient(get_node_url())
 
 
-logger.level("INFO")
+# logger.level("INFO")
+logger.remove()
+logger.add(sys.stderr, level="DEBUG") 
 
 
 class Message(BaseModel):
@@ -471,7 +474,7 @@ class Validator:
         model = ARGS.model or os.getenv("AGENTARTIFICIAL_MODEL") or os.getenv("OPENAI_MODEL")
         api_key = ARGS.api_key or os.getenv("AGENTARTIFICIAL_API_KEY") or os.getenv("OPENAI_API_KEY")
         
-        logger.info(f"\nMaking async request to: {url_to_use}")
+        logger.debug(f"\nMaking async request to: {url_to_use}")
         
         payload = json.dumps({
           "model": model,
@@ -499,15 +502,15 @@ class Validator:
                         logger.error(f"\nFailed to decode JSON from response. Status: {response.status}, Content-Type: {response.headers.get('Content-Type')}")
                         return None
                 else:
-                    logger.error(f"\nRequest failed with status {response.status}. URL: {url_to_use}")
+                    logger.debug(f"\nRequest failed with status {response.status}. URL: {url_to_use}")
                     response_text = await response.text()
-                    logger.error(f"Response content: {response_text[:200]}...")  # Log first 200 characters of response
+                    logger.debug(f"Response content: {response_text[:200]}...")  # Log first 200 characters of responvalidation resulse
                     return None
         except ConnectionError as e:
-            logger.error(f"\nNetwork error occurred: {e}\n{e.args}\n")
+            logger.debug(f"\nNetwork error occurred: {e}\n{e.args}\n")
             return None
         except Exception as e:
-            logger.error(f"\nUnexpected error occurred: {e}\n{e.args}\n")
+            logger.debug(f"\nUnexpected error occurred: {e}\n{e.args}\n")
             return None
 
     def cosine_similarity(self, embedding1, embedding2):
@@ -614,12 +617,12 @@ class Validator:
         logger.info("\nLoading weights")
         uids = []
         weights = []
-        
+        UINT16_MAX = 2 ** 16 - 1
         for uid, weight in score_dict.items():
             if uid == selfuid:
                 continue
             uids.append(uid)
-            weights.append(weight)
+            weights.append(int(weight * UINT16_MAX))
         logger.debug(f"\nuids: {uids}\nweights: {weights}")
         subnet_weights = {"uids": uids, "weights": weights}
         
@@ -784,6 +787,7 @@ class Validator:
         """
         logger.info("\nCalculating scores")
         logger.debug(f"\nweights_dict: {weights_dict}\nsimilairity_dict: {similairity_dict}")
+        tmp82 = weights_dict.get(82)
         scaled_weight_dict = self.scale_dict_values(weights_dict)
         scaled_similairity_dict = self.scale_dict_values(similairity_dict)
         staketo_dict = self.get_staketo_values()
@@ -797,7 +801,7 @@ class Validator:
             ) 
             if calculated_score <= 0:
                 calculated_score = 0.00001
-            logger.debug(f"UID: {uid}\nScore: {calculated_score}")
+            logger.debug(f"UID: {uid} Score: {calculated_score}")
             scaled_scores[uid] = calculated_score
             
         print(scaled_scores)

@@ -10,158 +10,130 @@ The strength of this subnet lies in its ability to enhance AI capabilities throu
 
 Vector stores play a crucial role in augmenting the abilities and knowledge base of existing AI models. We incentivize miners to deliver high-quality embedding services, rewarding them based on the excellence of their contributions. This not only enhances the overall quality of AI interactions but also creates a win-win situation for both miners and AI developers.
 
-## Future Work
+### Future Work
 
 We are initiating our subnet by deploying simple embedding miners. These miners utilize embedding functions to generate token embeddings, which are then stored in vectorstores. The second phase of our project involves leveraging these embedding miners to establish a distributed vector store. Our strategy includes creating domain-specific knowledge stores, which will be indexed on the blockchain. These stores will provide data as a service to large language models (LLMs). Additionally, we are exploring the integration of knowledge graphs and the storage of synthetic data. Potential collaborations are being considered, including one with the Synthia subnet, to enhance our capabilities in synthetic data handling.
 
-## Updated Validator Setup
+## Setup
 
-I have made some changes to the library to enable running of our validator to be simple. There now is a docker_launch.sh script that will walk you through the configuration of the validator and launch it in a container. 
-Alternatively if you would like to manually launch it the `eden_subnet/validator/validator.py` script now runs directly when called. You can either supply it `--commands` or populate a `.env` file with your configuration. You can find an example in `.env.example` and to get the command line arguments `python eden_subnet/validator/validator.py --help`
+### Minimum Requirements
 
-## Setup Instructions
+- **VRAM**: 8GB minimum
 
-Once you clone the repo you need to copy the ```eden.py``` file from ```eden_subnet/miner/eden.py``` to whatever the first part of your name is going to be.
+### Docker
+<!-- #### With Docker
 
-### Example:
-```cp eden_subnet/miner/eden.py eden_subnet/miner/my_miner.py```
+- [Install Docker](https://docs.docker.com/get-docker/)
+- Run `docker pull ghcr.io/agicommies/synthia:9d23f1f`
+- Run `docker run -v ~/.commune:/root/.commune -it [-p <port>:<port>] ghcr.io/agicommies/synthia:9d23f1f`
+- Run `poetry shell` to enter the enviroment
+  
+##### Operating with docker
 
-Inside of that file you need to change the class name from ```Miner_1``` to whatever you want the second part of the name to be. 
-That determines the keyname and the module path so in the example it would be:
+- You can quit docker with ctrl+d
+- You can dettach from your session with ctrl+p followed by ctrl+q
+- You can attach back to your session by running `docker attach <id>`
+- You can list the ids of your containers with `docker ps`
+- Note that you should pass the ports you're going to use to the container (with `-p <port>:<port>`) to bind them to your host machine.
+- You can pass enviroments variables to docker with `-e <VARIABLE>=<value>`.
+    e.g `docker run -e ANTHROPIC_API_KEY=<your-anthropic-api-key> -v ~/.commune:/root/.commune -it ghcr.io/agicommies/synthia:9d23f1f` -->
 
-`class Miner_1(Miner):` 
+### Local
 
-which turns into 
+- Install Python 3
+  - `sudo apt install python3`
+- [Install Poetry](https://python-poetry.org/docs/)
+- Install the Python dependencies with `poetry install`
+- **! IMPORTANT** Enter the Python environment with `poetry shell`
 
-`class BobTheMiner(Miner):`
+#### Running A Miner
 
-Now you need a key
+1. Generate a key for your miner.
 
-`comx key create my_miner.BobTheMiner`
+    ```bash
+        comx key create <key-name>
+    ```
 
-Then you register the miner
+2. Create and edit your `.env` file with your miner key name and port number.
 
-`comx module register my_miner.BobTheMiner my_miner.BobTheMiner 66.235.35.363 8000 --netuid 10`
+    ```bash
+        cp .env.example .env
+    ```
 
-and finally serve it
+3. Run your miner directly or via pm2
 
-`python -m eden_subnet.miner.my_miner --key_name my_miner.BobTheMiner --host 0.0.0.0 --port 8000`
+    ```bash
+        poetry run python -m eden_subnet.miner.cli
+    ```
 
-Note that the serving ip address is `0.0.0.0` meaning it listens on all ips. This is important so that your miner can recieve requests for embeddings. 
+    *Note: you need to keep this process alive, running in the background. Some options are tmux, pm2 or nohup.*
 
-=======
-## Minimum Requirements
+    ```bash
+        pm2 start "poetry run python -m eden_subnet.miner.cli" --name eden-subnet-miner
+    ```
 
-**VRAM**: min 8gb
-Internet connection
+4. Register your miner with the following command:
 
-## Launcher
+    ```bash
+        comx module register <key-name> <machine-public-ip> <port> --netuid 10
+    ```
 
-The easiest way to launch miners and validators is using the launch.sh script if you're on linux.
-``
-```chmod +x launch.sh` ``
-```bash launch.sh`
+#### Running A Validator
 
-Simpily follow the prompts. You information will be requested along with the correct format of that information. Select `deploy` to *serve* and *register* the validator or miner otherwise select `serve` or `register` to serve or register the module respectively. 
-*Serving* means you are making your module available to the network for use. Use host `0.0.0.0` when serving, this means your module will listen on all ips on the local system. 
-*Registering* means you are writing to the blockchain that your module is *served* and available for sure. This is the step where you pay burn and stake the correct balance for your module. 
+1. Generate a key for your validator.
 
-## Embedding Miner
+    ```bash
+        comx key create <key-name>
+    ```
 
-Base miner is in the [miner](eden_subnet/miner/miner.py) folder. Copy the class `Miner` and pass it the `MinerSettings` class to deploy your own version. The repo references the position of the miner class and the file it resides in through a naming convention of the miner. Use <FILE_NAME>.<CLASS_NAME> for both the name of the key you are staking with and the file/class name of the code to your miner. 
-To launch your miner you need to open a new python script in `eden_subnet/miner` and inherit the miner with a new class. You can see an example of this [here](eden_subnet/miner/eden.py)
-``
-`````#python
-from eden_subnet.miner.miner import Miner, MinerSettings
-from communex.compat.key import Keypair
+2. Create and edit your `.env` file with your key name and API keys
 
-# Your configuration
-# replace these values with the values of your miner
-settings = MinerSettings(
-    key_name = "my_file_name.MyClassName", 
-    module_path = "my_file_name.MyClassName",
-    host = "0.0.0.0",
-    port = 10001
-)
-# Inherit the Miner class into a new miner
-class YourClassName(Miner):
-    def __init__(self, configuration: MinerSettings):
-        super().__init__.py(configuration)
+    ```bash
+        cp .env.example .env
+    ```
 
-# Instantiate the miner passing it the settings you configured. 
-my_miner = YourClassName(settings)
+3. Run your validator directly or via pm2
 
-# Serve the miner
-my_miner.serve()``
-`````
-``
-```python -m eden_subnet.miner.miner`
+    ```bash
+        poetry run python -m eden_subnet.validator.cli
 
-That command will serve a miner listening on all ip addresses(use 0.0.0.0 for serving and your machines actual ip for registering) on port 10001. The miner code is located in `eden_subnet.miner.miner` and inside of that script there is a class called `Miner` that is being served.
+    ```
 
-Ensure the key has the same name and the file in the miner directory has the first word of your miner name and the class inside of that file is the second. Open the port and you should be good to go. 
+    *Note: you need to keep this process alive, running in the background. Some options are tmux, pm2 or nohup.*
 
-There is also a docker compose that will deploy validators and miners. You will have to adjust the key_names on the docker files along with the port to your specific specifications to use it. 
+    ```bash
+        pm2 start "poetry run python -m eden_subnet.validator.cli" --name eden-subnet-validator
+    ```
 
-## Validator
+4. Register your validator with the following command:
 
-The Validator generates a random allegory based on some topics that change regularly and produces embeddings locally before making a request to a miner. It then compares the two using a semantic similarity of the vectors and provides a score. Then it takes the scores of the whole subnet and calculates your position based on how well your embedder did and how that stands up against the rest of the subnet adjusting the weights accordingly.
-``
-`````#python
-from edne_subnet.validator.validator import Validator, ValidatorSettings
-from communex.compat.key import Keypair
+    ```bash
+        comx module register <key-name> --netuid 10
+    ```
 
-# Your configuration
-# replace these values with the values of your miner
-settings = ValidatorSettings(
-    key_name = "my_file_name.MyClassName", 
-    module_path = "my_file_name.MyClassName",
-    host = "0.0.0.0",
-    port = 10010
-)
-# Inherit the Valdiator class into a new miner
-class YourClassName(Validator):
-    def __init__(self, configuration: MinerSettings):
-        super().__init__.py(configuration)
+### Important Notes
 
-# Instantiate the miner passing it the settings you configured. 
-my_miner = YourClassName(settings)
+- Global burn fee for registering modules starts at 10 COM
+- Fee doubles each threshold reached per epoch
+- Validator staking requirement: 5000 COM
+- Stake requirements:
+  - Must cover burn fee
+  - Must meet minimum vote requirement for validators
+- Warning: Anomalous validator behavior will result in blacklisting
 
-# Serve the miner
-my_miner.serve()``
-`````
-The validator is served similarly to the miner with ``
-```python -m eden_subnet.validator.your_file_name your_file_name.YourClassName your_file_name.YourClassName 0.0.0.0 10010`
+Everyone should start off on pretty even footing as there is not a wild difference in embedding model. So the tie breaker is how much stake you have on the miner. Pulling all your stake off a miner will not be wise if you do not want to get bumped off the subnet. That will be replaced with how much storage you are providing to the network as the features roll out.
 
-Like the miner the validator will serve the class `Validator` which lives in a folder `eden_subnet.validator.validator` and provide that on port 10010 listening on all ip's
+### Support
 
-## Registering
-
-Once you confirm that you can run the validator and/or miner you need to register the module with the subnet. use the command
-``
-```comx module register KEY_NAME MODULE_PATH HOST_IP PORT --netuid 10 --stake AMOUNT`
-
-So for our example with the miner we would provide our actual ip address and copy the information accordingly
-``
-```comx module register miner.Miner miner.Miner 66.224.58.25 10010 --netuid 10 --stake 256`
-
-
-## Notes
-
-There is a global burn fee for registering modules(miners and validators are both modules) based on demand. Currently the base rate is 10com and it doubles every threshold amount reached per epoch. You'll want to ensure you have enough to cover that cost for miners. 
-
-If you would like to run validator we would appreciate the assistance in subnet coverage. The staking amount for voting with a validator is 5000 so you will need to have the burn fee which varies based on demand and along with the minimum vote requirement or you will not be able to run your validator. Any anomalous or strange behavior of validators will be investigated and any self voting or gaming the system will result in being added to the black list. 
-
-Everyone should start off on pretty even footing as there is not a wild difference in embedding model. So the tie breaker is how much stake you have on the miner. Pulling all your stake off a miner will not be wise if you do not want to get bumped off the subnet. That will be replaced with how much storage you are providing to the network as the features roll out. 
-
-If you have any questions or concerns please contact coolrazor or bakobiibizo on discord or send an email to info@agentartificial.com
+- Discord: Contact coolrazor or bakobiibizo
+- Email: <info@agentartificial.com>
 
 ## Contributions
 
-This was built by [Eden](https://twitter.com/project_eden_ai) in partnernship with [Agent Artificial](https://agentartificial.com)
+Built by [Eden](https://twitter.com/project_eden_ai) in partnership with [Agent Artificial](https://agentartificial.com)
+Subnet of [Commune](https://github.com/commune-ai/commune), based on the [Communex Synthia repo](https://github.com/agicommies/synthia).
 
-It is a subnet of [Commune](https://github.com/commune-ai/commune), an open source decentralized blockchain. The repo is based on the [Communex Synthia repo](https://github.com/agicommies/synthia). Special thanks to the team over at [Communex](https://github.com/agicommies) for their on going assistance in puzzling all this out. 
+### Contributing
 
-If you'd like to contribute please make a pull request detailing any changes you've made or open an issue so we can hash out how to make a larger change. 
-
-
+- Submit pull requests with detailed change descriptions
+- Open issues for larger changes

@@ -4,11 +4,11 @@ import requests
 from importlib import import_module
 from re import Match
 from pydantic import BaseModel
-from communex.compat.key import Ss58Address
+from communex.types import Ss58Address  # type: ignore  
 from typing import List, Optional, Tuple, Dict
 from loguru import logger
-from communex.client import CommuneClient
-from communex._common import get_node_url
+from communex.client import CommuneClient  # type: ignore
+from communex._common import get_node_url  # type: ignore
 from eden_subnet.base.data_models import (
     ModuleSettings,
     Module,

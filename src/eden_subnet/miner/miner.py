@@ -142,6 +142,7 @@ class Miner(BaseModel, Module):
 
 @app.post("/generate")
 def generate(request: GenerateRequest):
+    #TODO: check that request came from a module(validator, check minimum stake?)
     """
     A function that generates something based on the provided request.
 
